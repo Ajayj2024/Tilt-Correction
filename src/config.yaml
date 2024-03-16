@@ -2,6 +2,8 @@
 # image directory
 img_dir: 'images/'
 
+result_dir: 'results/'
+
 # Edge detection parameter
 canny_parameters:
   low_threshold: 50     # minimum intensity gradient required to consider a pixel as an edge pixel
@@ -10,7 +12,7 @@ canny_parameters:
   aperture_size: 3      # size of the Sobel kernel used for gradient calculation
 
 # Hough Line parameters
-hough_lines_parameters:
+hough_line_parameters:
   rho: 1
   theta: 'np.pi/180'
   threshold: 50
