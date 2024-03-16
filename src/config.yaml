@@ -1,0 +1,18 @@
+
+# image directory
+img_dir: 'images/'
+
+# Edge detection parameter
+canny_parameters:
+  low_threshold: 50     # minimum intensity gradient required to consider a pixel as an edge pixel
+  high_threshold: 200   # minimum intensity gradient required for a pixel to be considered a strong edge pixel.
+  L2gradient: None      # boolean flag indicating whether to use the L2-norm (Euclidean distance) to calculate the gradient magnitude
+  aperture_size: 3      # size of the Sobel kernel used for gradient calculation
+
+# Hough Line parameters
+hough_lines_parameters:
+  rho: 1
+  theta: 'np.pi/180'
+  threshold: 50
+  min_line_length: 100
+  max_line_gap: 10
