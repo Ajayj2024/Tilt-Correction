@@ -33,14 +33,19 @@ class TiltCorrection:
             'C': (self.width, -self.height), 
             'D': (0, -self.height)
         }
-        
-        
-    def perspective_transform(self):
+    
+    def make_line_with_point_slope(self):
+        # Getting extreme corners of edge detection image
         corner_indices = get_corner_indices(self.padded_edge_detection)
+        
+        # Drawing the point and saving the image
         img = draw_points(img= self.padded_edge_detection.copy(), indices= corner_indices)
-        save_img(img, 'results/canny_corners/shoe.png')
+        save_img(img, 'results/canny_with_corners/shoe.png')
+        
+        # Arranging the the extreme points in cyclic order like ABCD
         corner_indices = cyclic_ordering_indices(corner_indices)
-        lines_lst = []
+        
+        lines_wrt_points = []
         for i in range(len(corner_indices)):
             pt1 = corner_indices[i]
             j = i+1
@@ -48,38 +53,40 @@ class TiltCorrection:
                 j = 0
                 
             pt2 = corner_indices[j]
-            lines_lst.append([pt1, pt2])
-        # print(lines_lst)
-        # img = draw_line(self.padded_edge_detection.copy(),lines_lst)
-        # save_img(img, 'results/canny_corners/shoe.png')
-        lines = make_line(lines_lst)
-        # print(lines)
-        line_map_to_target = {}
+            lines_wrt_points.append([pt1, pt2])
+        
+        lines_wrt_slope = make_line(lines_wrt_points)  
+        
+        return lines_wrt_slope
+      
+    def mapping_lines_to_vertices(self, lines_wrt_point_slope):
+        line_map_to_ref_points = {}
         for vertex in self.ref_coordinates.keys():
-            print(vertex)
+            # print(vertex)
             target = self.ref_coordinates[vertex]
             min_d = float('inf')
-            for line in lines:
+            for line in lines_wrt_point_slope:
                 # print(line)
                 d = point_to_line_distance(line[0],line[1], target)
                 foot = point_to_foot(line, target)
-                print(d,foot)
-                print(self.padded_edge_detection.shape)
+                # print(d,foot)
+                # print(self.padded_edge_detection.shape)
                 if foot[0] >= 0 and foot[1] <= 0 and d < min_d and foot[0] < self.width and abs(foot[1]) < self.height:
-                    line_map_to_target[vertex] = line
+                    line_map_to_ref_points[vertex] = line
                     min_d = d
-                    
-        print(line_map_to_target)
-        
+        return line_map_to_ref_points
+    
+    
+    def get_extreme_boundary_lines(self, line_map_to_vertices):
         boundary_lines = {}
         non_zero_canny_padded = np.nonzero(self.padded_edge_detection)
         t = 0
-        for vertex in tqdm(line_map_to_target.keys()):
-            pt = line_map_to_target[vertex][0]
-            slope = line_map_to_target[vertex][1]
+        for vertex in tqdm(line_map_to_vertices.keys()):
+            pt = line_map_to_vertices[vertex][0]
+            slope = line_map_to_vertices[vertex][1]
             l1 = substitute(pt, slope, self.ref_coordinates[vertex])
             l1_sign = l1 > 0
-            print(l1_sign)
+            # print(l1_sign)
             
             indices = []
             
@@ -101,8 +108,10 @@ class TiltCorrection:
                 
             t += 1
             
-        print(boundary_lines)
             
+        return boundary_lines
+    
+    def solution_of_lines(self,boundary_lines):
         sol_points = []
         for i in boundary_lines.keys():
             line1 = boundary_lines[i]
@@ -123,15 +132,30 @@ class TiltCorrection:
             solution = np.linalg.solve(A, B)
             sol_points.append(solution)
             
-        for i in range(len(sol_points)):
-            sol_points[i][0]= int(sol_points[i][0])
-            sol_points[i][1]= int(-1*sol_points[i][1])
-        print(sol_points)
+        return sol_points
+    
+    def perspective_transform(self):
+        # Getting lines wrt points and slope
+        lines_wrt_point_slope = self.make_line_with_point_slope()
         
-        img = draw_points(self.padded_edge_detection.copy(), sol_points)
-        save_img(img,'results/canny_corners/shoe1.png') 
+        # mapping the vertices ABCD to the lines which are nearer 
+        line_map_to_vertices = self.mapping_lines_to_vertices(lines_wrt_point_slope)
         
-        pts1 = np.float32(sol_points)
+        # Getting extreme boundary lines of object in image
+        boundary_lines = self.get_extreme_boundary_lines(line_map_to_vertices)
+        
+        # Solving the solution for the extreme boundary lines
+        solution = self.solution_of_lines(boundary_lines)
+            
+        for i in range(len(solution)):
+            solution[i][0]= int(solution[i][0])
+            solution[i][1]= int(-1*solution[i][1])
+        print(solution)
+        
+        sol_points_img = draw_points(self.padded_edge_detection.copy(), solution)
+        save_img(sol_points_img,'results/canny_corners/shoe1.png') 
+        
+        pts1 = np.float32(solution)
         # Size of the Transformed Image
         pts2 = np.float32([[0,0],[600,0],[600,300],[0,300]])
         # for val in pt1:
