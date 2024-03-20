@@ -8,7 +8,7 @@ from src.utils import *
 
 def main(img_path):
     tilt_correction = TiltCorrection(tilted_obj_path=img_path)
-    tilt_correction.rotate_object_and_save()
+    tilt_correction.perspective_transform()
     print(f"{img_path} completed")
 
 
