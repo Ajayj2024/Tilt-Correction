@@ -40,10 +40,12 @@ class TiltCorrection:
                                         maxLineGap=self.params['hough_line_parameters']['max_line_gap']
                                         )
             
+            return hough_lines
+            
         except Exception as e:
             raise e
         
-        return hough_lines
+       
     
     def boundary_lines(self):
         # Hough lines
@@ -56,7 +58,7 @@ class TiltCorrection:
         corner_indices = [[non_zero_canny[0][0], non_zero_canny[1][0]], [non_zero_canny[0][-1], non_zero_canny[1][-1]]]
         non_zero_canny = np.nonzero(self.edge_detection.T)
         corner_indices += [[non_zero_canny[1][0], non_zero_canny[0][0]], [non_zero_canny[1][-1], non_zero_canny[0][-1]]]
-        # print(corner_indices)
+        print(corner_indices)
         # Finding the hough line boundaries of an object by calculating the distances of corner point to the houghlines
         for indices in corner_indices:
             min_distance = float('inf')
@@ -94,7 +96,8 @@ class TiltCorrection:
             #     self.width = self.tilted_gray_obj_diagonal
             angles = self.angles(boundary_lines= boundary_lines)
             # print(angles)
-            center = (height//2, width//2)
+            # center = (height//2, width//2)
+            center = [899, 938]
             i = 1
             for angle in angles:
                 if angle>0:

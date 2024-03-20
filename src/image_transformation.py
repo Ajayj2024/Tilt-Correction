@@ -1,6 +1,7 @@
 from src.utils import *
 import numpy as np
 import cv2
+from src.config import params
 
 # Usage: 
 #     Change main function with ideal arguments
@@ -30,12 +31,18 @@ class ImageTransformer(object):
         with shape (height, width, #channels) """
 
     def __init__(self, image_path, shape=None):
+        self.params = params()
         self.image_path = image_path
         self.image = load_image(image_path, shape)
- 
+        self.image = cv2.Canny(self.image, 
+                                  self.params['canny_parameters']['low_threshold'], 
+                                  self.params['canny_parameters']['high_threshold'], 
+                                  None if self.params['canny_parameters']['L2gradient'] == 'None' else self.params['canny_parameters']['L2gradient'],
+                                  self.params['canny_parameters']['aperture_size']
+                                  )
         self.height = self.image.shape[0]
         self.width = self.image.shape[1]
-        self.num_channels = self.image.shape[2]
+        # self.num_channels = self.image.shape[2]
 
 
     """ Wrapper of Rotating a Image """
@@ -52,9 +59,17 @@ class ImageTransformer(object):
 
         # Get projection matrix
         mat = self.get_M(rtheta, rphi, rgamma, dx, dy, dz)
-        
-        rotated_image = cv2.warpPerspective(self.image.copy(), mat, (self.width, self.height))
-        save_image('rotated/image1.jpg',rotated_image)
+        # Padding the image
+        top = 300
+        bottom = 300
+        left = 300
+        right = 300
+        border_color = [0, 0, 0]  # Border color in BGR format (black in this case)
+
+        # # Add border to the image
+        padded_tilted_obj = cv2.copyMakeBorder(self.image.copy(), top, bottom, left, right, cv2.BORDER_CONSTANT, value=border_color)
+        rotated_image = cv2.warpPerspective(padded_tilted_obj, mat, (self.width+600, self.height+600))
+        return rotated_image
 
     """ Get Perspective Projection Matrix """
     def get_M(self, theta, phi, gamma, dx, dy, dz):
