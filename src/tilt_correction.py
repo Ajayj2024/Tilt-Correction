@@ -133,11 +133,11 @@ class TiltCorrection:
         
         pts1 = np.float32(sol_points)
         # Size of the Transformed Image
-        pts2 = np.float32([[0,0],[500,0],[500,300],[0,300]])
+        pts2 = np.float32([[0,0],[600,0],[600,300],[0,300]])
         # for val in pt1:
         #     cv2.circle(padded_image,(val[0],val[1]),5,(0,255,0),-1)
         M = cv2.getPerspectiveTransform(pts1,pts2)
-        dst = cv2.warpPerspective(self.edge_detection,M,(800,800))
+        dst = cv2.warpPerspective(self.padded_edge_detection,M,(600,300))
         cv2.imwrite('results/canny_corners/shoe2.png',dst)
         
         
