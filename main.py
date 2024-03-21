@@ -4,6 +4,7 @@ import argparse, cv2, glob, os
 from src.config import params
 import numpy as np
 from src.utils import *
+import time
 
 
 def main(img_path):
@@ -13,18 +14,31 @@ def main(img_path):
 
 
 if __name__ == "__main__":
+    
+    start_time = time.time()
+    
+    # Intializing config.yaml
+    params = params()
+    
+    # creating folders
+    os.makedirs(params['result_dir'], exist_ok= True)
+    os.makedirs(params['corner_extreme_img_dir'], exist_ok= True)
+    os.makedirs(params['boundary_line_img_dir'], exist_ok= True)
+    os.makedirs(params['tilt_corrected_img_dir'], exist_ok= True)
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('img_file',help='img_file')
     args = parser.parse_args()
     
-    # Intializing config.yaml
-    params = params()
 
     print("Image Tilt Correction started")
     
     main(params['img_dir'] + args.img_file)
     
     print("Image Tilt Correction ended")
+    
+    end_time = time.time()
+    print(f"Execution Time: {end_time - start_time}")
     
     
     

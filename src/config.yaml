@@ -4,6 +4,12 @@ img_dir: 'images/'
 
 result_dir: 'results/'
 
+corner_extreme_img_dir: 'results/corner_extreme_img/'
+
+boundary_line_img_dir: 'results/boundary_line_img/'
+
+tilt_corrected_img_dir: 'results/tilt_corrected_img/'
+
 # Edge detection parameter
 canny_parameters:
   low_threshold: 50     # minimum intensity gradient required to consider a pixel as an edge pixel
