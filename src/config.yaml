@@ -10,17 +10,26 @@ boundary_line_img_dir: 'results/boundary_line_img/'
 
 tilt_corrected_img_dir: 'results/tilt_corrected_img/'
 
-# Edge detection parameter
+# Edge detection parameter (default)
 canny_parameters:
   low_threshold: 50     # minimum intensity gradient required to consider a pixel as an edge pixel
   high_threshold: 200   # minimum intensity gradient required for a pixel to be considered a strong edge pixel.
   L2gradient: None      # boolean flag indicating whether to use the L2-norm (Euclidean distance) to calculate the gradient magnitude
   aperture_size: 3      # size of the Sobel kernel used for gradient calculation
 
-# Hough Line parameters
+# Hough Line parameters (default)
 hough_line_parameters:
   rho: 1
   theta: 'np.pi/180'
   threshold: 50
   min_line_length: 100
   max_line_gap: 10
+
+
+# Image Padding default values 
+pad_parameters:
+  top: 600
+  bottom: 600
+  left: 600
+  right:  600
+  border_color: [0,0,0]

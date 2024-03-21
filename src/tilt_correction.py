@@ -8,27 +8,35 @@ from tqdm import tqdm
 class TiltCorrection:
     def __init__(self, tilted_obj_path) -> None:
         self.img_name = tilted_obj_path.split('/')[-1]
-        self.tilted_obj_path = tilted_obj_path
-        self.tilted_gray_obj = cv.imread(tilted_obj_path, cv.IMREAD_GRAYSCALE)
-        self.params = params()
         
+        # intialize config parameters
+        self.params = params()
         self.results_path = self.params['result_dir']
-        # convert the object image to gray scale
-        # self.tilted_gray_obj = cv.cvtColor(self.tilted_obj, cv.COLOR_BGR2GRAY)
+        self.tilted_obj_path = tilted_obj_path
+        
+        # original image having same channels as given image
+        self.tilted_img = cv.imread(tilted_obj_path)
+        # gray scale image
+        self.tilted_gray_img = cv.imread(tilted_obj_path, cv.IMREAD_GRAYSCALE)
         
         # Edge detection
-        self.edge_detection = cv.Canny(self.tilted_gray_obj, 
+        self.edge_detection = cv.Canny(self.tilted_gray_img, 
                                   self.params['canny_parameters']['low_threshold'], 
                                   self.params['canny_parameters']['high_threshold'], 
                                   None if self.params['canny_parameters']['L2gradient'] == 'None' else self.params['canny_parameters']['L2gradient'],
                                   self.params['canny_parameters']['aperture_size']
                                   )
-        
+        # padding for edge detection
         self.padded_edge_detection = pad_image(self.edge_detection)
-        self.gray_padded_edge_detection = pad_image(self.tilted_gray_obj)
+        
+        # padding for original image
+        self.pad_tilted_img = pad_image(self.tilted_img)
+        # gray scale padding
+        self.gray_padded_edge_detection = pad_image(self.tilted_gray_img)
         
         self.height = self.padded_edge_detection.shape[0]
         self.width = self.padded_edge_detection.shape[1]
+        
         # image corner coordinates
         self.ref_coordinates = {
             'A': (0,0), 
@@ -170,7 +178,7 @@ class TiltCorrection:
                 j = 0
                 
             pt2 = solution[j]
-            d = distance(solution[i], solution[j])
+            d = distance_btw_pts(solution[i], solution[j])
             points_d_map[d] = [pt1,pt2]
             dist.append(d)
         
@@ -231,15 +239,21 @@ class TiltCorrection:
         # Finding vertices for rectangle boundary
         ## List of vertices will be in order BCDA
         res_sol = self.find_rectangle_boundaries(solution)
-        print(res_sol)
         
         # Draw reecatngle Boundaries for the object
         sol_points_img = draw_boundary(self.padded_edge_detection.copy(),res_sol)
         save_img(sol_points_img, self.params['boundary_line_img_dir']+self.img_name)
+        print('res_sol',res_sol)
+        
+        # Perspective tranformation for original background removed tilted object image
+        # Equalizing res_sol indices to the size of tilted_img 
+        # res_sol = equalize_indices_of_padded_to_org_img(res_sol)
+        # print(res_sol)
+        
         
         # Size if the object
-        res_img_width = int(distance(res_sol[1],res_sol[2]))
-        res_img_height = int(distance(res_sol[0],res_sol[1]))
+        res_img_width = int(distance_btw_pts(res_sol[1],res_sol[2]))
+        res_img_height = int(distance_btw_pts(res_sol[0],res_sol[1]))
         
         pts1 = np.float32(res_sol)
         
@@ -248,15 +262,15 @@ class TiltCorrection:
         horizontal_pts2 = np.float32([[res_img_width,0],[res_img_width,res_img_height],[0,res_img_height], [0,0]])
         
         M_horizontal = cv2.getPerspectiveTransform(pts1,horizontal_pts2)
-        horizontal_transformed_image = cv2.warpPerspective(self.padded_edge_detection,M_horizontal,(res_img_width,res_img_height))
+        horizontal_transformed_image = cv2.warpPerspective(self.pad_tilted_img,M_horizontal,(res_img_width,res_img_height))
         save_img(horizontal_transformed_image, self.params['tilt_corrected_img_dir']+ 'horizontal_' +self.img_name)
         
         # vertical perspective tranformation
         # Size of the Transformed Image => vertical image
         vertical_pts2 = np.float32([[res_img_height,res_img_width],[0,res_img_width], [0,0], [res_img_height,0]])
         
-        vertical = cv2.getPerspectiveTransform(pts1,vertical_pts2)
-        vertical_transformed_image = cv2.warpPerspective(self.padded_edge_detection,vertical,(res_img_height,res_img_width))
+        vertical_M = cv2.getPerspectiveTransform(pts1,vertical_pts2)
+        vertical_transformed_image = cv2.warpPerspective(self.pad_tilted_img,vertical_M,(res_img_height,res_img_width))
         save_img(vertical_transformed_image, self.params['tilt_corrected_img_dir']+ 'vertical_' +self.img_name)
         
         

@@ -2,6 +2,12 @@ from math import pi
 import numpy as np
 import cv2
 import math
+from src.config import params 
+
+# intializing config parametrs
+param = params()
+pad_params = param['pad_parameters']
+
 
 """ Utility Functions """
 
@@ -147,7 +153,12 @@ def make_line(two_coordinates_indices: list) -> list:
     return line_lst
 
 
-def pad_image(img, top=600, bottom= 600, left= 600, right= 600, border_color= [0,0,0]) -> np.array:
+def pad_image(img, 
+              top= pad_params['top'], 
+              bottom= pad_params['bottom'], 
+              left= pad_params['left'], 
+              right= pad_params['right'], 
+              border_color= pad_params['border_color']) -> np.array:
     """Padding the image
 
     Returns:
@@ -189,9 +200,12 @@ def solutio_of_2_lines(line: list):
     pass
 
 
-def distance(pt1, pt2):
+def distance_btw_pts(pt1, pt2):
     return np.linalg.norm(np.array(pt1) - np.array(pt2))
 
 
-def rotate_line_about_point(line ):
-    pass
+def equalize_indices_of_padded_to_org_img(indices: list):
+    for idx in indices:
+        idx = [idx[0] - pad_params['top'], idx[1] - pad_params['left']]
+        
+    return idx

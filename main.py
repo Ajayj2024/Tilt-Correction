@@ -18,13 +18,13 @@ if __name__ == "__main__":
     start_time = time.time()
     
     # Intializing config.yaml
-    params = params()
+    param = params()
     
     # creating folders
-    os.makedirs(params['result_dir'], exist_ok= True)
-    os.makedirs(params['corner_extreme_img_dir'], exist_ok= True)
-    os.makedirs(params['boundary_line_img_dir'], exist_ok= True)
-    os.makedirs(params['tilt_corrected_img_dir'], exist_ok= True)
+    os.makedirs(param['result_dir'], exist_ok= True)
+    os.makedirs(param['corner_extreme_img_dir'], exist_ok= True)
+    os.makedirs(param['boundary_line_img_dir'], exist_ok= True)
+    os.makedirs(param['tilt_corrected_img_dir'], exist_ok= True)
     
     parser = argparse.ArgumentParser()
     parser.add_argument('img_file',help='img_file')
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     print("Image Tilt Correction started")
     
-    main(params['img_dir'] + args.img_file)
+    main(param['img_dir'] + args.img_file)
     
     print("Image Tilt Correction ended")
     
