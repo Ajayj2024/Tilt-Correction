@@ -5,6 +5,3 @@ def params():
         data = yaml.safe_load(f)
         
     return data
-
-param = params
-print(param)

@@ -47,6 +47,9 @@ def substitute(pt1, slope, target) -> bool:
     
     return True if y - y1 - slope*x + slope*x1 > 0 else False
 
+def Q4_to_index(point):
+    return [point[0], -1*point[1]] if point[1] < 0 else [point[0], point[1]]
+
 
 # Convert the point to Q4 quadrant to make it equalize to co-ordination system
 def point_Q4(point):
@@ -77,8 +80,25 @@ def get_corner_indices(canny_img: np.array) -> list:
     non_zero_canny = np.nonzero(canny_img.T)
     corner_indices += [[non_zero_canny[0][0], non_zero_canny[1][0]], [non_zero_canny[0][-1], non_zero_canny[1][-1]]]
     
+    # Arranging the the extreme points in cyclic order 
+    corner_indices = cyclic_ordering_indices(corner_indices)
     return corner_indices
 
+def get_corner_indices_using_dst(img: np.array, ref_coordinates):
+        corner_indices = []
+        non_zero_canny = np.nonzero(img)
+        for v in ref_coordinates.keys():
+            vertex_coord = ref_coordinates[v]
+            dist_map = {}
+            for i in range(len(non_zero_canny[0])):
+                d = distance_btw_pts(vertex_coord, [non_zero_canny[1][i], non_zero_canny[0][i]])
+                dist_map[d] = [non_zero_canny[1][i], non_zero_canny[0][i]]
+            
+            lst_d = list(dist_map.keys())
+            corner_indices.append(dist_map[min(lst_d)])
+            
+            
+        return corner_indices
 
 def draw_points(img: np.array, indices: list) -> np.array:
     """Plot the points to the image
@@ -105,7 +125,7 @@ def draw_points(img: np.array, indices: list) -> np.array:
     return img   
 
 
-def draw_boundary(img: np.array, lines: list)->np.array:
+def draw_boundary(img: np.array, vertices: list)->np.array:
     """Draw boundaries for forming quadileteral with given vertices
 
     Args:
@@ -115,11 +135,14 @@ def draw_boundary(img: np.array, lines: list)->np.array:
     Returns:
         np.array: Image with drawn lines
     """
-    for i in range(len(lines)):
+    for i in range(len(vertices)):
         j = i + 1
-        if j == len(lines):
+        if j == len(vertices):
             j = 0
-        cv2.line(img, point_Q4(lines[i]), point_Q4(lines[j]), (255,255,255), 2)
+            
+        x1, y1 = Q4_to_index(vertices[i])
+        x2, y2 = Q4_to_index(vertices[j])
+        cv2.line(img, (int(x1), int(y1)), (int(x2), int(y2)), (255,255,255), 8)
         
     return img
         
