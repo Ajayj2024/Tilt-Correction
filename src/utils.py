@@ -49,7 +49,7 @@ def substitute(pt1, slope, target) -> bool:
 
 
 # Convert the point to Q4 quadrant to make it equalize to co-ordination system
-def point_Q4(point: tuple) -> tuple:
+def point_Q4(point):
     """Convert the points to Q4 quadrant which helps for line equations
 
     Args:
@@ -59,7 +59,7 @@ def point_Q4(point: tuple) -> tuple:
         tuple: point convert to the Q4
     """
     # print(point)
-    return (point[0], -1*point[1]) if point[1] > 0 else (point[0], point[1])
+    return [point[0], -1*point[1]] if point[1] > 0 else [point[0], point[1]]
 
 
 def get_corner_indices(canny_img: np.array) -> list:
@@ -90,7 +90,7 @@ def draw_points(img: np.array, indices: list) -> np.array:
     Returns:
         np.array: _description_
     """
-    radius, color, thickness = 15, (255,255,255), -1
+    radius, color, thickness = 5, (255,255,255), -1
     text = 'Point'  # Annotation text
     font = cv2.FONT_HERSHEY_SIMPLEX  # Font
     font_scale = 1.5  # Font scale
@@ -119,7 +119,7 @@ def draw_boundary(img: np.array, lines: list)->np.array:
         j = i + 1
         if j == len(lines):
             j = 0
-        cv2.line(img, lines[i], lines[j], (255,255,255), 2)
+        cv2.line(img, point_Q4(lines[i]), point_Q4(lines[j]), (255,255,255), 2)
         
     return img
         
@@ -201,6 +201,7 @@ def solutio_of_2_lines(line: list):
 
 
 def distance_btw_pts(pt1, pt2):
+    pt1, pt2 = point_Q4(pt1), point_Q4(pt2)
     return np.linalg.norm(np.array(pt1) - np.array(pt2))
 
 

@@ -37,6 +37,7 @@ class TiltCorrection:
         self.height = self.padded_edge_detection.shape[0]
         self.width = self.padded_edge_detection.shape[1]
         
+        self.move_line_to_dst = 0
         # image corner coordinates
         self.ref_coordinates = {
             'A': (0,0), 
@@ -44,19 +45,35 @@ class TiltCorrection:
             'C': (self.width, -self.height), 
             'D': (0, -self.height)
         }
+        
+    def get_corner_indices(self):
+        corner_indices = []
+        non_zero_canny = np.nonzero(self.padded_edge_detection)
+        for v in self.ref_coordinates.keys():
+            vertex_coord = self.ref_coordinates[v]
+            dist_map = {}
+            for i in range(len(non_zero_canny[0])):
+                d = distance_btw_pts(vertex_coord, [non_zero_canny[1][i], non_zero_canny[0][i]])
+                dist_map[d] = [non_zero_canny[1][i], non_zero_canny[0][i]]
+            
+            lst_d = list(dist_map.keys())
+            corner_indices.append(dist_map[min(lst_d)])
+            
+        return corner_indices
+        
     
     # lines with 2 point coordinates are convert to line having one point and slope
     def make_line_with_point_slope(self):
         
         # Getting extreme corners of edge detection image
-        corner_indices = get_corner_indices(self.padded_edge_detection)
+        corner_indices = self.get_corner_indices()
         
         # Drawing the point and saving the image
         img = draw_points(img= self.padded_edge_detection.copy(), indices= corner_indices)
         save_img(img, self.params['corner_extreme_img_dir']+self.img_name)
         
         # Arranging the the extreme points in cyclic order like ABCD
-        corner_indices = cyclic_ordering_indices(corner_indices)
+        # corner_indices = cyclic_ordering_indices(corner_indices)
         
         lines_wrt_points = []
         for i in range(len(corner_indices)):
@@ -75,15 +92,20 @@ class TiltCorrection:
     # mapping the image corners to the lines which are nearer
     def mapping_lines_to_vertices(self, lines_wrt_point_slope):
         line_map_to_ref_points = {}
-        for vertex in self.ref_coordinates.keys():
-            target = self.ref_coordinates[vertex]
-            min_d = float('inf')
-            for line in lines_wrt_point_slope:
-                d = point_to_line_distance(line[0],line[1], target)
-                foot = point_to_foot(line, target)
-                if foot[0] >= 0 and foot[1] <= 0 and d < min_d and foot[0] < self.width and abs(foot[1]) < self.height:
-                    line_map_to_ref_points[vertex] = line
-                    min_d = d
+        vertices_order = 'BCDA' 
+        for i in range(len(lines_wrt_point_slope)):
+            line_map_to_ref_points[vertices_order[i]] = lines_wrt_point_slope[i]
+            
+        return line_map_to_ref_points
+        # for vertex in self.ref_coordinates.keys():
+        #     target = self.ref_coordinates[vertex]
+        #     min_d = float('inf')
+        #     for line in lines_wrt_point_slope:
+        #         d = point_to_line_distance(line[0],line[1], target)
+        #         foot = point_to_foot(line, target)
+        #         if foot[0] >= 0 and foot[1] <= 0 and d < min_d and foot[0] < self.width and abs(foot[1]) < self.height:
+        #             line_map_to_ref_points[vertex] = line
+        #             min_d = d
         return line_map_to_ref_points
     
     # Get extreme boundary lines for the tilted objects
@@ -141,109 +163,128 @@ class TiltCorrection:
         return sol_points
     
     # rotating the lines wrt point 
-    def line_rotating_wrt_point(self, solution_lines,points_d_map, dist, lines_wrt_slope, u,v):
+    # def line_rotating_wrt_point(self, solution_lines,points_d_map, dist, lines_wrt_slope, u,v):
         
-        # consider the maximum opposite side
-        a, b = points_d_map[max([dist[u], dist[v]])]
+    #     # consider the maximum opposite side
+    #     a, b = points_d_map[max([dist[u], dist[v]])]
         
-        # get the side which should be considered for rotation of opposite sides about fixed poit
-        index = lines_wrt_slope.index(make_line([[a,b]])[0])
-        if index == -1: 
-            print("Index is -1")
-            return
-        i = 3 if index - 1 == -1 else index - 1
-        j = 0 if index + 1 == 4 else index + 1
+    #     # get the side which should be considered for rotation of opposite sides about fixed poit
+    #     index = lines_wrt_slope.index(make_line([[a,b]])[0])
+    #     if index == -1: 
+    #         print("Index is -1")
+    #         return
+    #     i = 3 if index - 1 == -1 else index - 1
+    #     j = 0 if index + 1 == 4 else index + 1
         
-        slope1, slope2 = lines_wrt_slope[i][1], lines_wrt_slope[j][1]
+    #     slope1, slope2 = lines_wrt_slope[i][1], lines_wrt_slope[j][1]
         
-        # Just rotate the image upto the inclination equals to average of inclination of opposite sides
-        angle = (np.arctan([slope1]) + np.arctan([slope2])) / 2
-        res_slope = np.tan(angle).tolist()[0]
+    #     # Just rotate the image upto the inclination equals to average of inclination of opposite sides
+    #     angle = (np.arctan([slope1]) + np.arctan([slope2])) / 2
+    #     res_slope = np.tan(angle).tolist()[0]
         
-        # Making the lines parallel with res_slope and passing through a, b respectively
-        solution_lines[i] = [a, res_slope]
-        solution_lines[j] = [b, res_slope]
+    #     # Making the lines parallel with res_slope and passing through a, b respectively
+    #     solution_lines[i] = [a, res_slope]
+    #     solution_lines[j] = [b, res_slope]
     
-    def find_rectangle_boundaries(self, solution):
-        dist = []
-        points_d_map = {}
-        lines_wrt_slope = []
-        solution_lines = {}
+    # def find_rectangle_boundaries(self, solution):
+    #     dist = []
+    #     points_d_map = {}
+    #     lines_wrt_slope = []
+    #     solution_lines = {}
         
-        # Finding the length of side 
-        for i in range(len(solution)):
-            pt1 = solution[i]
-            j = i + 1
-            if j == len(solution):
-                j = 0
+    #     # Finding the length of side 
+    #     for i in range(len(solution)):
+    #         pt1 = solution[i]
+    #         j = i + 1
+    #         if j == len(solution):
+    #             j = 0
                 
-            pt2 = solution[j]
-            d = distance_btw_pts(solution[i], solution[j])
-            points_d_map[d] = [pt1,pt2]
-            dist.append(d)
+    #         pt2 = solution[j]
+    #         d = distance_btw_pts(solution[i], solution[j])
+    #         points_d_map[d] = [pt1,pt2]
+    #         dist.append(d)
         
-        # make sides having 2 points 
-        lines_wrt_points = []
-        for i in range(len(solution)):
-            pt1 = solution[i]
-            j = i + 1
-            if j == len(solution):
-                j = 0
+    #     # make sides having 2 points 
+    #     lines_wrt_points = []
+    #     for i in range(len(solution)):
+    #         pt1 = solution[i]
+    #         j = i + 1
+    #         if j == len(solution):
+    #             j = 0
                 
-            pt2 = solution[j]
-            lines_wrt_points.append([pt1, pt2])
+    #         pt2 = solution[j]
+    #         lines_wrt_points.append([pt1, pt2])
         
-        # making sides having 1 point and slope  
-        lines_wrt_slope = make_line(lines_wrt_points)   
+    #     # making sides having 1 point and slope  
+    #     lines_wrt_slope = make_line(lines_wrt_points)   
         
-        # Rotate the line wrt to the vertices which has largest side upto making the lines paralle
-        self.line_rotating_wrt_point(solution_lines,points_d_map, dist, lines_wrt_slope,0,2)
-        self.line_rotating_wrt_point(solution_lines,points_d_map, dist, lines_wrt_slope,1,3)
+    #     # Rotate the line wrt to the vertices which has largest side upto making the lines paralle
+    #     self.line_rotating_wrt_point(solution_lines,points_d_map, dist, lines_wrt_slope,0,2)
+    #     self.line_rotating_wrt_point(solution_lines,points_d_map, dist, lines_wrt_slope,1,3)
 
-        # Solution for the rectangle line equations
-        res_sol = self.solution_of_lines(solution_lines)
+    #     # Solution for the rectangle line equations
+    #     res_sol = self.solution_of_lines(solution_lines)
         
-        # Converting y coordinates to positive
-        for i in range(len(res_sol)):
-            res_sol[i] = res_sol[i].tolist()
-            res_sol[i][0]= int(res_sol[i][0])
-            res_sol[i][1]= int(res_sol[i][1]) * -1
+    #     # Converting y coordinates to positive
+    #     for i in range(len(res_sol)):
+    #         res_sol[i] = res_sol[i].tolist()
+    #         res_sol[i][0]= int(res_sol[i][0])
+    #         res_sol[i][1]= int(res_sol[i][1]) * -1
         
         
-        return res_sol
-        
-     
+    #     return res_sol
+    
+    def moving_boudary_to_distance(self,boundary_lines):
+        moved_boundary_lines = {}
+        move_line = {
+            0: [self.move_line_to_dst, self.move_line_to_dst],
+            1: [self.move_line_to_dst, -self.move_line_to_dst],
+            2: [-self.move_line_to_dst, -self.move_line_to_dst],
+            3: [-self.move_line_to_dst, self.move_line_to_dst],
+        }
+        for i in boundary_lines.keys():
+            x_dts, y_dst = move_line[i]
+            pt = boundary_lines[i][0]
+            slope = boundary_lines[i][1]
+            moved_boundary_lines[i] = [[pt[0] + x_dts, pt[1] + y_dst], slope]
+
+        return moved_boundary_lines
+    
     def perspective_transform(self):
         
         # Getting lines wrt points and slope
         lines_wrt_point_slope = self.make_line_with_point_slope()
-        print(lines_wrt_point_slope)
+        print('lines with slope and point',lines_wrt_point_slope)
         
         # mapping the vertices ABCD to the lines which are nearer 
         line_map_to_vertices = self.mapping_lines_to_vertices(lines_wrt_point_slope)
-        print(line_map_to_vertices)
+        print('mapping line to the vertices BCDA',line_map_to_vertices)
         
         # Getting extreme boundary lines of object in image
         boundary_lines = self.get_extreme_boundary_lines(line_map_to_vertices)
-        print(boundary_lines)
+        print('Boundary lines',boundary_lines)
         
+        moved_boundary_lines = self.moving_boudary_to_distance(boundary_lines)
+        print('moved_boundary_lines:', moved_boundary_lines)
         # Solving the solution for the extreme boundary lines
-        solution = self.solution_of_lines(boundary_lines)
+        solution = self.solution_of_lines(moved_boundary_lines)
+        print(solution)
         
         # the point got in the list will in in numpy array we convert it to list
         for i in range(len(solution)):
             solution[i] = solution[i].tolist()
-            solution[i][0]= solution[i][0]
-            solution[i][1]= solution[i][1]
-        
+            solution[i][0]= int(solution[i][0])
+            solution[i][1]= int(solution[i][1]) * -1
+        print(solution)
+        sol_points_img = draw_points(self.padded_edge_detection.copy(),solution)
+        save_img(sol_points_img, self.params['boundary_line_img_dir']+self.img_name)
         # Finding vertices for rectangle boundary
         ## List of vertices will be in order BCDA
-        res_sol = self.find_rectangle_boundaries(solution)
+        # res_sol = self.find_rectangle_boundaries(solution)
         
         # Draw reecatngle Boundaries for the object
-        sol_points_img = draw_boundary(self.padded_edge_detection.copy(),res_sol)
-        save_img(sol_points_img, self.params['boundary_line_img_dir']+self.img_name)
-        print('res_sol',res_sol)
+        
+        # print('res_sol',res_sol)
         
         # Perspective tranformation for original background removed tilted object image
         # Equalizing res_sol indices to the size of tilted_img 
@@ -252,12 +293,12 @@ class TiltCorrection:
         
         
         # Size if the object
-        res_img_width = int(distance_btw_pts(res_sol[1],res_sol[2]))
-        res_img_height = int(distance_btw_pts(res_sol[0],res_sol[1]))
+        res_img_width, res_img_width_ = int(distance_btw_pts(solution[1],solution[2])), int(distance_btw_pts(solution[3],solution[0]))
+        res_img_height, res_img_height_ = int(distance_btw_pts(solution[0],solution[1])), int(distance_btw_pts(solution[2],solution[3]))
+        res_img_height, res_img_width = max(res_img_height, res_img_height_), max(res_img_width, res_img_width_)
+        pts1 = np.float32(solution)
         
-        pts1 = np.float32(res_sol)
-        
-        # Horizontal perspective tranformation
+        # # Horizontal perspective tranformation
         # Size of the Transformed Image => horizontal image
         horizontal_pts2 = np.float32([[res_img_width,0],[res_img_width,res_img_height],[0,res_img_height], [0,0]])
         
@@ -265,13 +306,13 @@ class TiltCorrection:
         horizontal_transformed_image = cv2.warpPerspective(self.pad_tilted_img,M_horizontal,(res_img_width,res_img_height))
         save_img(horizontal_transformed_image, self.params['tilt_corrected_img_dir']+ 'horizontal_' +self.img_name)
         
-        # vertical perspective tranformation
-        # Size of the Transformed Image => vertical image
-        vertical_pts2 = np.float32([[res_img_height,res_img_width],[0,res_img_width], [0,0], [res_img_height,0]])
+        # # vertical perspective tranformation
+        # # Size of the Transformed Image => vertical image
+        # vertical_pts2 = np.float32([[res_img_height,res_img_width],[0,res_img_width], [0,0], [res_img_height,0]])
         
-        vertical_M = cv2.getPerspectiveTransform(pts1,vertical_pts2)
-        vertical_transformed_image = cv2.warpPerspective(self.pad_tilted_img,vertical_M,(res_img_height,res_img_width))
-        save_img(vertical_transformed_image, self.params['tilt_corrected_img_dir']+ 'vertical_' +self.img_name)
+        # vertical_M = cv2.getPerspectiveTransform(pts1,vertical_pts2)
+        # vertical_transformed_image = cv2.warpPerspective(self.pad_tilted_img,vertical_M,(res_img_height,res_img_width))
+        # save_img(vertical_transformed_image, self.params['tilt_corrected_img_dir']+ 'vertical_' +self.img_name)
         
         
     # @property
