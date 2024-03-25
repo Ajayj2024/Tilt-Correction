@@ -55,9 +55,9 @@ class TiltCorrection:
         corner_indices = get_corner_indices(self.padded_edge_detection)
         type1 = True
         print('Corner_indices',corner_indices)
-        if len(corner_indices) != 4:
-            corner_indices = get_corner_indices_using_dst(self.padded_edge_detection, self.ref_coordinates)
-            type1 = False
+        # if len(corner_indices) != 4:
+        # corner_indices = get_corner_indices_using_dst(self.padded_edge_detection, self.ref_coordinates)
+        # type1 = False
         # Drawing the point and saving the image
         img = draw_points(img= self.padded_edge_detection.copy(), indices= corner_indices)
         save_img(img, self.params['corner_extreme_img_dir']+self.img_name)
@@ -312,21 +312,27 @@ class TiltCorrection:
         print('lines with slope and point',lines_wrt_point_slope)
         
         # mapping the vertices ABCD to the lines which are nearer 
-        line_map_to_vertices = self.mapping_lines_to_vertices(lines_wrt_point_slope)
+        line_map_to_vertices = self.mapping_lines_to_vertices_type2(lines_wrt_point_slope)
         print('mapping line to the vertices BCDA',line_map_to_vertices)
         
         # Getting extreme boundary lines of object in image
         boundary_lines = self.get_extreme_boundary_lines(line_map_to_vertices)
         print('Boundary lines',boundary_lines)
         
-        moved_boundary_lines = self.moving_boudary_to_distance(boundary_lines)
+        moved_boundary_lines = self.moving_boudary_to_distance_type2(boundary_lines)
         print('moved_boundary_lines:', moved_boundary_lines)
         # Solving the solution for the extreme boundary lines
         solution = self.solution_of_lines(moved_boundary_lines)
-        print(solution)
+        print('solution: ',solution)
         sol_points_img = draw_boundary(self.padded_edge_detection.copy(),solution)
         save_img(sol_points_img, self.params['boundary_line_img_dir']+self.img_name)
-                
+        
+        
+        for i in range(len(solution)):
+            solution[i] = solution[i].tolist()
+            solution[i][0] = int(solution[i][0])
+            solution[i][1] = int(solution[i][1]) * -1
+              
         # Finding vertices for rectangle boundary
         ## List of vertices will be in order BCDA
         # res_sol = self.find_rectangle_boundaries(solution)
@@ -345,7 +351,7 @@ class TiltCorrection:
         # Size if the object
         res_img_width, res_img_width_ = int(distance_btw_pts(solution[1],solution[2])), int(distance_btw_pts(solution[3],solution[0]))
         res_img_height, res_img_height_ = int(distance_btw_pts(solution[0],solution[1])), int(distance_btw_pts(solution[2],solution[3]))
-        # res_img_height, res_img_width = max(res_img_height, res_img_height_), max(res_img_width, res_img_width_)
+        res_img_height, res_img_width = min(res_img_height, res_img_height_), max(res_img_width, res_img_width_)
         pts1 = np.float32(solution)
         
         # # Horizontal perspective tranformation
@@ -354,7 +360,9 @@ class TiltCorrection:
         
         M_horizontal = cv2.getPerspectiveTransform(pts1,horizontal_pts2)
         horizontal_transformed_image = cv2.warpPerspective(self.pad_tilted_img,M_horizontal,(res_img_width,res_img_height))
-        save_img(horizontal_transformed_image, self.params['tilt_corrected_img_dir']+ 'horizontal_' +self.img_name)
+        
+        # os.makedirs(param['tilt_corrected_img_dir'] + self.img_name, exist_ok= True)
+        save_img(horizontal_transformed_image, self.params['tilt_corrected_img_dir']+ self.img_name)
         
         # vertical perspective tranformation
         ## Size of the Transformed Image => vertical image
