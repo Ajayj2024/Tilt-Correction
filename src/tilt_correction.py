@@ -8,7 +8,6 @@ from tqdm import tqdm
 from src.correction_3d_type import Correction3DType
 class TiltCorrection:
     def __init__(self, tilted_obj_path) -> None:
-        super().__init__()
         self.img_name = tilted_obj_path.split('/')[-1]
         
         # intialize config parameters
@@ -48,16 +47,18 @@ class TiltCorrection:
             'D': (0, -self.height)
         }
         
+    # gets the extreme corners of the object according the type
     @property
     def get_corners(self):
         
         # Getting extreme corners of edge detection image
-        corner_indices = get_corner_indices(self.padded_edge_detection)
-        type1 = True
-        print('Corner_indices',corner_indices)
+        # corner_indices = get_corner_indices(self.padded_edge_detection)
+        # type1 = True
+        # print('Corner_indices',corner_indices)
         # if len(corner_indices) != 4:
-        # corner_indices = get_corner_indices_using_dst(self.padded_edge_detection, self.ref_coordinates)
-        # type1 = False
+        corner_indices = get_corner_indices_using_dst(self.padded_edge_detection, self.ref_coordinates)
+        type1 = False
+        
         # Drawing the point and saving the image
         img = draw_points(img= self.padded_edge_detection.copy(), indices= corner_indices)
         save_img(img, self.params['corner_extreme_img_dir']+self.img_name)
@@ -213,11 +214,9 @@ class TiltCorrection:
         # Solution for the rectangle line equations
         res_sol = self.solution_of_lines(solution_lines)
         
-        # Converting y coordinates to positive
+        # Converting y coordinates to positive and integer
         for i in range(len(res_sol)):
-            res_sol[i] = res_sol[i].tolist()
-            res_sol[i][0]= int(res_sol[i][0])
-            res_sol[i][1]= int(res_sol[i][1]) * -1
+            res_sol[i] = Q4_to_index(res_sol[i])
         
         
         return res_sol
@@ -327,11 +326,9 @@ class TiltCorrection:
         sol_points_img = draw_boundary(self.padded_edge_detection.copy(),solution)
         save_img(sol_points_img, self.params['boundary_line_img_dir']+self.img_name)
         
-        
+        # Converting y coordinates to positive and integer
         for i in range(len(solution)):
-            solution[i] = solution[i].tolist()
-            solution[i][0] = int(solution[i][0])
-            solution[i][1] = int(solution[i][1]) * -1
+            solution[i] = Q4_to_index(solution[i])
               
         # Finding vertices for rectangle boundary
         ## List of vertices will be in order BCDA

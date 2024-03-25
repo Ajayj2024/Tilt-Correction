@@ -47,8 +47,18 @@ def substitute(pt1, slope, target) -> bool:
     
     return True if y - y1 - slope*x + slope*x1 > 0 else False
 
-def Q4_to_index(point):
-    return [point[0], -1*point[1]] if point[1] < 0 else [point[0], point[1]]
+def Q4_to_index(point) -> list:
+    """Converts y coordinate to positive
+    If y is negative then convert it to positive else don't convert
+
+    Args:
+        point : point to be converted
+
+    Returns:
+        list: converted point
+    """
+    point = point if type(point) == list else point.tolist()
+    return [int(point[0]), -1*int(point[1])] if point[1] < 0 else [int(point[0]), int(point[1])]
 
 
 # Convert the point to Q4 quadrant to make it equalize to co-ordination system
@@ -66,13 +76,13 @@ def point_Q4(point):
 
 
 def get_corner_indices(canny_img: np.array) -> list:
-    """Gets the corner point of the tilted object
+    """Gets the corner point of the tilted object by considering the non-zero indices type 1 object
 
     Args:
         canny_img (np.array): image array
 
     Returns:
-        list: gives the corner indices of the tilted object
+        list: gives the corner indices of the tilted object of type 1
     """
     non_zero_canny = np.nonzero(canny_img)
     corner_indices = [[non_zero_canny[1][0], non_zero_canny[0][0]], [non_zero_canny[1][-1], non_zero_canny[0][-1]]]
@@ -85,20 +95,28 @@ def get_corner_indices(canny_img: np.array) -> list:
     return corner_indices
 
 def get_corner_indices_using_dst(img: np.array, ref_coordinates):
-        corner_indices = []
-        non_zero_canny = np.nonzero(img)
-        for v in ref_coordinates.keys():
-            vertex_coord = ref_coordinates[v]
-            dist_map = {}
-            for i in range(len(non_zero_canny[0])):
-                d = distance_btw_pts(vertex_coord, [non_zero_canny[1][i], non_zero_canny[0][i]])
-                dist_map[d] = [non_zero_canny[1][i], non_zero_canny[0][i]]
-            
-            lst_d = list(dist_map.keys())
-            corner_indices.append(dist_map[min(lst_d)])
-            
-            
-        return corner_indices
+    """Gets the corner point of the tilted object by considering the minimum distance to the corner  (type 2 object)
+
+    Args:
+        canny_img (np.array): image array
+
+    Returns:
+        list: gives the corner indices of the tilted object of type 2
+    """
+    corner_indices = []
+    non_zero_canny = np.nonzero(img)
+    for v in ref_coordinates.keys():
+        vertex_coord = ref_coordinates[v]
+        dist_map = {}
+        for i in range(len(non_zero_canny[0])):
+            d = distance_btw_pts(vertex_coord, [non_zero_canny[1][i], non_zero_canny[0][i]])
+            dist_map[d] = [non_zero_canny[1][i], non_zero_canny[0][i]]
+        
+        lst_d = list(dist_map.keys())
+        corner_indices.append(dist_map[min(lst_d)])
+        
+        
+    return corner_indices
 
 def draw_points(img: np.array, indices: list) -> np.array:
     """Plot the points to the image
@@ -219,11 +237,19 @@ def cyclic_ordering_indices(indices: list):
     A, C, B, D = indices
     return [A, B, C, D]
 
-def solutio_of_2_lines(line: list):
-    pass
+
 
 
 def distance_btw_pts(pt1, pt2):
+    """ Distance between two points in
+
+    Args:
+        pt1 : point
+        pt2 : point
+
+    Returns:
+        np.array: Distance btw two points 
+    """
     pt1, pt2 = point_Q4(pt1), point_Q4(pt2)
     return np.linalg.norm(np.array(pt1) - np.array(pt2))
 
