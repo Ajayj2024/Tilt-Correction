@@ -109,7 +109,7 @@ def get_corner_indices_using_dst(img: np.array, ref_coordinates):
         vertex_coord = ref_coordinates[v]
         dist_map = {}
         for i in range(len(non_zero_canny[0])):
-            d = distance_btw_pts(vertex_coord, [non_zero_canny[1][i], non_zero_canny[0][i]])
+            d = euclidean_distance(vertex_coord, [non_zero_canny[1][i], non_zero_canny[0][i]])
             dist_map[d] = [non_zero_canny[1][i], non_zero_canny[0][i]]
         
         lst_d = list(dist_map.keys())

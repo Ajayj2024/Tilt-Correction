@@ -52,12 +52,12 @@ class TiltCorrection:
     def get_corners(self):
         
         # Getting extreme corners of edge detection image
-        # corner_indices = get_corner_indices(self.padded_edge_detection)
-        # type1 = True
+        corner_indices = get_corner_indices(self.padded_edge_detection)
+        type1 = True
         # print('Corner_indices',corner_indices)
         # if len(corner_indices) != 4:
-        corner_indices = get_corner_indices_using_dst(self.padded_edge_detection, self.ref_coordinates)
-        type1 = False
+        # corner_indices = get_corner_indices_using_dst(self.padded_edge_detection, self.ref_coordinates)
+        # type1 = False
         
         # Drawing the point and saving the image
         img = draw_points(img= self.padded_edge_detection.copy(), indices= corner_indices)
@@ -189,7 +189,7 @@ class TiltCorrection:
                 j = 0
                 
             pt2 = solution[j]
-            d = distance_btw_pts(solution[i], solution[j])
+            d = euclidean_distance(solution[i], solution[j])
             points_d_map[d] = [pt1,pt2]
             dist.append(d)
         
@@ -257,10 +257,10 @@ class TiltCorrection:
         # res_sol = equalize_indices_of_padded_to_org_img(res_sol)
         # print(res_sol)
         
-        res_img_width, res_img_height = int(distance_btw_pts(res_sol[1],res_sol[2])), int(distance_btw_pts(res_sol[0],res_sol[1]))
+        res_img_width, res_img_height = int(euclidean_distance(res_sol[1],res_sol[2])), int(euclidean_distance(res_sol[0],res_sol[1]))
         # Size if the object
-        # res_img_width, res_img_width_ = int(distance_btw_pts(solution[1],solution[2])), int(distance_btw_pts(solution[3],solution[0]))
-        # res_img_height, res_img_height_ = int(distance_btw_pts(solution[0],solution[1])), int(distance_btw_pts(solution[2],solution[3]))
+        # res_img_width, res_img_width_ = int(euclidean_distance(solution[1],solution[2])), int(euclidean_distance(solution[3],solution[0]))
+        # res_img_height, res_img_height_ = int(euclidean_distance(solution[0],solution[1])), int(euclidean_distance(solution[2],solution[3]))
         # res_img_height, res_img_width = max(res_img_height, res_img_height_), max(res_img_width, res_img_width_)
         pts1 = np.float32(res_sol)
         
@@ -344,10 +344,10 @@ class TiltCorrection:
         # res_sol = equalize_indices_of_padded_to_org_img(res_sol)
         # print(res_sol)
         
-        # res_img_width, res_img_height = int(distance_btw_pts(res_sol[1],res_sol[2])), int(distance_btw_pts(res_sol[0],res_sol[1]))
+        # res_img_width, res_img_height = int(euclidean_distance(res_sol[1],res_sol[2])), int(euclidean_distance(res_sol[0],res_sol[1]))
         # Size if the object
-        res_img_width, res_img_width_ = int(distance_btw_pts(solution[1],solution[2])), int(distance_btw_pts(solution[3],solution[0]))
-        res_img_height, res_img_height_ = int(distance_btw_pts(solution[0],solution[1])), int(distance_btw_pts(solution[2],solution[3]))
+        res_img_width, res_img_width_ = int(euclidean_distance(solution[1],solution[2])), int(euclidean_distance(solution[3],solution[0]))
+        res_img_height, res_img_height_ = int(euclidean_distance(solution[0],solution[1])), int(euclidean_distance(solution[2],solution[3]))
         res_img_height, res_img_width = min(res_img_height, res_img_height_), max(res_img_width, res_img_width_)
         pts1 = np.float32(solution)
         
