@@ -14,7 +14,7 @@ def main(img_path):
     print(f"{img_path} completed")
 
 def func(img_path):
-    a, b, c= 1, 0, 1
+    a, b, c= 2, 0, 1
     img_arr = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     edge_detection = cv2.Canny(img_arr, 
                                   param['canny_parameters']['low_threshold'], 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     
     # Intializing config.yaml
     param = parameters()
-    i = 5
+    i = 6
     # creating folders
     os.makedirs(param['result_dir'], exist_ok= True)
     os.makedirs(param['corner_extreme_img_dir'], exist_ok= True)
