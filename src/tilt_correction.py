@@ -1,17 +1,17 @@
 import cv2 as cv
 import numpy as np
-from src.config import params
+from src.config import parameters
 from src.utils import *
-from src.image_transformation import ImageTransformer
+# from src.image_transformation import ImageTransformer
 import os
 from tqdm import tqdm
-from src.correction_3d_type import Correction3DType
+# from src.correction_3d_type import Correction3DType
 class TiltCorrection:
     def __init__(self, tilted_obj_path) -> None:
         self.img_name = tilted_obj_path.split('/')[-1]
         
         # intialize config parameters
-        self.params = params()
+        self.params = parameters()
         self.results_path = self.params['result_dir']
         self.tilted_obj_path = tilted_obj_path
         
