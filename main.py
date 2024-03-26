@@ -6,6 +6,7 @@ import numpy as np
 from src.utils import *
 import time
 import shutil
+from tqdm import tqdm
 param = parameters()
 
 def main(img_path):
@@ -14,7 +15,7 @@ def main(img_path):
     print(f"{img_path} completed")
 
 def func(img_path):
-    a, b, c= 1, 0.4, 1
+    a, b, c= 0.3, 0.5, 0.6
     img_arr = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     edge_detection = cv2.Canny(img_arr, 
                                   param['canny_parameters']['low_threshold'], 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     
     # Intializing config.yaml
     param = parameters()
-    i = 13
+    i = 14
     # creating folders
     os.makedirs(param['result_dir'], exist_ok= True)
     os.makedirs(param['corner_extreme_img_dir'], exist_ok= True)
@@ -62,8 +63,20 @@ if __name__ == "__main__":
 
     print("Image Tilt Correction started")
     
-    img = func(param['img_dir'] + args.img_file)
-    save_img(img,'experiment/experiment'+ f'{i}/' +args.img_file)
+    img_dir = param['img_dir1']
+    if args.img_file == '*':
+        img_path = os.listdir(img_dir)
+        for path in tqdm(img_path):
+            img = func(img_dir + path)
+            save_img(img, 'experiment/experiment' + str(i) + '/' + path)
+    img_dir = param['img_dir2']
+    if args.img_file == '*':
+        img_path = os.listdir(img_dir)
+        for path in tqdm(img_path):
+            img = func(img_dir + path)
+            save_img(img, 'experiment/experiment' + str(i) + '/' + path)
+    else:
+        main(param['img_dir'] + args.img_file)
     print("Image Tilt Correction ended")
     
     end_time = time.time()

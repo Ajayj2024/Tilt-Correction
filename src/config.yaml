@@ -1,6 +1,7 @@
 
 # image directory
-img_dir: 'images/'
+img_dir1: 'images1/'
+img_dir2: 'images2/'
 
 result_dir: 'results/'
 
