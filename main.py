@@ -14,7 +14,7 @@ def main(img_path):
     print(f"{img_path} completed")
 
 def func(img_path):
-    a, b= 1, 1
+    a, b, c= 1, 1, 0
     img_arr = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     edge_detection = cv2.Canny(img_arr, 
                                   param['canny_parameters']['low_threshold'], 
@@ -32,7 +32,7 @@ def func(img_path):
         point_d = None
         min_d = float('inf')
         for i in range(len(non_zero_canny[0])):
-            d = a*minimum_value_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + b*euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) 
+            d = a*manhattan_distance_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + b*euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + c*minimum_value_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]])
             if d < min_d:
                 min_d = d
                 point_d = [non_zero_canny[1][i], non_zero_canny[0][i]]
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     print("Image Tilt Correction started")
     
     img = func(param['img_dir'] + args.img_file)
-    save_img(img,'experiment/'+ str(i) +args.img_file)
+    save_img(img,'experiment/experiment'+ f'{i}/' +args.img_file)
     print("Image Tilt Correction ended")
     
     end_time = time.time()
