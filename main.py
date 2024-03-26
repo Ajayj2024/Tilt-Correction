@@ -15,7 +15,7 @@ def main(img_path):
     print(f"{img_path} completed")
 
 def func(img_path):
-    a, b, c= 1,0, 0
+    a, b, c= 1,0.2, 1
     img_arr = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     edge_detection = cv2.Canny(img_arr, 
                                   param['canny_parameters']['low_threshold'], 
@@ -25,8 +25,8 @@ def func(img_path):
                                   )
     padded_edge_detection = pad_image(edge_detection)
     non_zero_canny = np.nonzero(padded_edge_detection)
-    print([padded_edge_detection.shape[0], padded_edge_detection.shape[1]])
-    print([padded_edge_detection.shape[0], 0])
+    # print([padded_edge_detection.shape[0], padded_edge_detection.shape[1]])
+    # print([padded_edge_detection.shape[0], 0])
     ref_points = [[0,0], [0, padded_edge_detection.shape[1]], [padded_edge_detection.shape[0], padded_edge_detection.shape[1]], [padded_edge_detection.shape[0], 0]]
     corner_indices = []
     for p in ref_points:
@@ -38,8 +38,8 @@ def func(img_path):
                 min_d = d
                 point_d = [non_zero_canny[1][i], non_zero_canny[0][i]]
         corner_indices.append(point_d)  
-        print(min_d)
-    print(corner_indices)
+        # print(min_d)
+    # print(corner_indices)
     img = draw_points(padded_edge_detection.copy(), corner_indices)
     return img
 if __name__ == "__main__":
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     
     # Intializing config.yaml
     param = parameters()
-    i = 14
+    i = 16
     # creating folders
     os.makedirs(param['result_dir'], exist_ok= True)
     os.makedirs(param['corner_extreme_img_dir'], exist_ok= True)
