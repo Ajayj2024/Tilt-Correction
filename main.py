@@ -1,31 +1,60 @@
 from src.tilt_correction import TiltCorrection
-from src.image_transformation import ImageTransformer
+# from src.image_transformation import ImageTransformer
 import argparse, cv2, glob, os
-from src.config import params
+from src.config import parameters
 import numpy as np
 from src.utils import *
 import time
-
+import shutil
+param = parameters()
 
 def main(img_path):
     tilt_correction = TiltCorrection(tilted_obj_path=img_path)
     tilt_correction.perspective_transform()
     print(f"{img_path} completed")
 
-
+def func(img_path):
+    a, b= 1, 1
+    img_arr = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    edge_detection = cv2.Canny(img_arr, 
+                                  param['canny_parameters']['low_threshold'], 
+                                  param['canny_parameters']['high_threshold'], 
+                                  None if param['canny_parameters']['L2gradient'] == 'None' else param['canny_parameters']['L2gradient'],
+                                  param['canny_parameters']['aperture_size']
+                                  )
+    padded_edge_detection = pad_image(edge_detection)
+    non_zero_canny = np.nonzero(padded_edge_detection)
+    print([padded_edge_detection.shape[0], padded_edge_detection.shape[1]])
+    print([padded_edge_detection.shape[0], 0])
+    ref_points = [[0,0], [0, padded_edge_detection.shape[1]], [padded_edge_detection.shape[0], padded_edge_detection.shape[1]], [padded_edge_detection.shape[0], 0]]
+    corner_indices = []
+    for p in ref_points:
+        point_d = None
+        min_d = float('inf')
+        for i in range(len(non_zero_canny[0])):
+            d = a*minimum_value_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + b*euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) 
+            if d < min_d:
+                min_d = d
+                point_d = [non_zero_canny[1][i], non_zero_canny[0][i]]
+        corner_indices.append(point_d)  
+        print(min_d)
+    print(corner_indices)
+    img = draw_points(padded_edge_detection.copy(), corner_indices)
+    return img
 if __name__ == "__main__":
     
     start_time = time.time()
     
     # Intializing config.yaml
-    param = params()
-    
+    param = parameters()
+    i = 1
     # creating folders
     os.makedirs(param['result_dir'], exist_ok= True)
     os.makedirs(param['corner_extreme_img_dir'], exist_ok= True)
     os.makedirs(param['boundary_line_img_dir'], exist_ok= True)
     os.makedirs(param['tilt_corrected_img_dir'], exist_ok= True)
-    
+    os.makedirs('experiment', exist_ok= True)
+    os.makedirs('experiment/experiment' + str(i), exist_ok= True)
     parser = argparse.ArgumentParser()
     parser.add_argument('img_file',help='img_file')
     args = parser.parse_args()
@@ -33,8 +62,8 @@ if __name__ == "__main__":
 
     print("Image Tilt Correction started")
     
-    main(param['img_dir'] + args.img_file)
-    
+    img = func(param['img_dir'] + args.img_file)
+    save_img(img,'experiment/'+ str(i) +args.img_file)
     print("Image Tilt Correction ended")
     
     end_time = time.time()

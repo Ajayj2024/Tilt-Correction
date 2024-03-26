@@ -2,10 +2,10 @@ from math import pi
 import numpy as np
 import cv2
 import math
-from src.config import params 
+from src.config import parameters
 
 # intializing config parametrs
-param = params()
+param = parameters()
 pad_params = param['pad_parameters']
 
 
@@ -136,7 +136,7 @@ def draw_points(img: np.array, indices: list) -> np.array:
     text_thickness = 1  # Text thickness
 
     for val in indices:
-        print(val)
+        val = Q4_to_index(val)
         cv2.circle(img,(int(val[0]),int(val[1])),radius,color,thickness)
         cv2.putText(img, str(val), (int(val[0]) + 10, int(val[1]) - 10), font, font_scale, text_color, text_thickness)
     
@@ -240,7 +240,7 @@ def cyclic_ordering_indices(indices: list):
 
 
 
-def distance_btw_pts(pt1, pt2):
+def euclidean_distance(pt1, pt2):
     """ Distance between two points in
 
     Args:
@@ -259,3 +259,21 @@ def equalize_indices_of_padded_to_org_img(indices: list):
         idx = [idx[0] - pad_params['top'], idx[1] - pad_params['left']]
         
     return idx
+
+def minimum_value_distance(pt1, pt2):
+    
+    pt1, pt2 = point_Q4(pt1), point_Q4(pt2)
+    # print(pt1)
+    
+    x1, y1 = pt1
+    x2, y2 = pt2
+    return min(abs(x1 - x2), abs(y1-y2))
+
+def manhattan_distance_distance(pt1, pt2):
+    
+    pt1, pt2 = point_Q4(pt1), point_Q4(pt2)
+    # print(pt1)
+    
+    x1, y1 = pt1
+    x2, y2 = pt2
+    return abs(x1 - x2) + abs(y1-y2)
