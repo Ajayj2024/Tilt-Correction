@@ -7,6 +7,7 @@ from src.utils import *
 import time
 import shutil
 from tqdm import tqdm
+from collections import defaultdict
 param = parameters()
 
 def main(img_path):
@@ -29,17 +30,31 @@ def func(img_path):
     # print([padded_edge_detection.shape[0], 0])
     ref_points = [[0,0], [0, padded_edge_detection.shape[1]], [padded_edge_detection.shape[0], padded_edge_detection.shape[1]], [padded_edge_detection.shape[0], 0]]
     corner_indices = []
-    for p in ref_points:
-        point_d = None
-        min_d = float('inf')
-        for i in range(len(non_zero_canny[0])):
-            d = a*manhattan_distance_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + b*euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + c*minimum_value_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]])
-            if d < min_d:
-                min_d = d
-                point_d = [non_zero_canny[1][i], non_zero_canny[0][i]]
-        corner_indices.append(point_d)  
+    point_d = defaultdict(list)
+    for i in range(len(non_zero_canny[0])):
+        d = 0
+        for p in ref_points:
+            d += euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]])
+        point_d[d].append([non_zero_canny[1][i], non_zero_canny[0][i]])
+        
+    sorted_d = sorted(list(point_d.keys()))
+    print(sorted_d[-4:])
+    corner_indices = []
+    for d in sorted_d:
+        # print(point_d[d])
+        corner_indices.append(point_d[d][0])
+    # for p in ref_points:
+    #     point_d = None
+    #     min_d = float('inf')
+    #     for i in range(len(non_zero_canny[0])):
+    #         d = euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]])
+    #         # d = a*manhattan_distance_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + b*euclidean_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]]) + c*minimum_value_distance(p, [non_zero_canny[1][i], non_zero_canny[0][i]])
+    #         if d < min_d:
+    #             min_d = d
+    #             point_d = [non_zero_canny[1][i], non_zero_canny[0][i]]
+    #     corner_indices.append(point_d)  
         # print(min_d)
-    # print(corner_indices)
+    print(corner_indices)
     img = draw_points(padded_edge_detection.copy(), corner_indices)
     return img
 if __name__ == "__main__":
@@ -48,7 +63,7 @@ if __name__ == "__main__":
     
     # Intializing config.yaml
     param = parameters()
-    i = 16
+    i = 20
     # creating folders
     os.makedirs(param['result_dir'], exist_ok= True)
     os.makedirs(param['corner_extreme_img_dir'], exist_ok= True)
@@ -63,20 +78,25 @@ if __name__ == "__main__":
 
     print("Image Tilt Correction started")
     
-    img_dir = param['img_dir1']
+    img_dir1 = param['img_dir1']
     if args.img_file == '*':
-        img_path = os.listdir(img_dir)
+        img_path = os.listdir(img_dir1)
         for path in tqdm(img_path):
-            img = func(img_dir + path)
+            img = func(img_dir1 + path)
             save_img(img, 'experiment/experiment' + str(i) + '/' + path)
-    img_dir = param['img_dir2']
+    img_dir2 = param['img_dir2']
     if args.img_file == '*':
-        img_path = os.listdir(img_dir)
+        img_path = os.listdir(img_dir2)
         for path in tqdm(img_path):
-            img = func(img_dir + path)
+            img = func(img_dir2 + path)
             save_img(img, 'experiment/experiment' + str(i) + '/' + path)
     else:
-        main(param['img_dir'] + args.img_file)
+        if args.img_file in os.listdir(img_dir1):
+            
+            func(param['img_dir1'] + args.img_file)
+        elif args.img_file in os.listdir(img_dir2):
+            
+            func(param['img_dir2'] + args.img_file)
     print("Image Tilt Correction ended")
     
     end_time = time.time()
